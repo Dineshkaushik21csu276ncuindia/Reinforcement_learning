@@ -1,0 +1,70 @@
+import numpy as np
+
+# Define the grid world and rewards
+grid_world = np.array([
+    [-1, -1, -1, -1],
+    [-1, -1, -1, -1],
+    [-1, -1, -1, -1],
+    [100, -1, -1, -1]
+])
+
+# Define actions: 0 - up, 1 - down, 2 - left, 3 - right
+num_actions = 4
+
+# Define transition probabilities for each action and each state
+transition_probs = np.array([
+    [
+        # Action 0 (up) transition probabilities for each state
+        [
+            [0.8, 0.1, 0.0, 0.1],  # State 0 transitions probabilities
+            [0.1, 0.8, 0.1, 0.0],  # State 1 transition probabilities
+            [0.0, 0.1, 0.8, 0.1],  # State 2 transition probabilities
+            [0.0, 0.0, 0.0, 1.0]   # State 3 (goal state) transition probabilities
+        ],
+        # ... Action 0 transition probabilities for other states
+    ],
+    # ... Transition probabilities for other actions
+])
+
+# Define initial policy (arbitrary)
+initial_policy = np.zeros_like(grid_world, dtype=int)
+
+# Perform policy iteration
+def policy_iteration(grid_world, transition_probs, initial_policy, num_actions, gamma=0.9, num_iterations=1000):
+    policy = np.copy(initial_policy)
+    for _ in range(num_iterations):
+        # Policy evaluation
+        values = np.zeros_like(grid_world, dtype=float)
+        for i in range(grid_world.shape[0]):
+            for j in range(grid_world.shape[1]):
+                action = policy[i, j]
+                value = 0
+                for next_i in range(grid_world.shape[0]):
+                    for next_j in range(grid_world.shape[1]):
+                        value += transition_probs[action][i, j, next_i] * (
+                            grid_world[next_i, next_j] + gamma * values[next_i, next_j]
+                        )
+                values[i, j] = value
+
+        # Policy improvement
+        for i in range(grid_world.shape[0]):
+            for j in range(grid_world.shape[1]):
+                q_values = np.zeros(num_actions)
+                for action in range(num_actions):
+                    for next_i in range(grid_world.shape[0]):
+                        for next_j in range(grid_world.shape[1]):
+                            q_values[action] += transition_probs[action][i, j, next_i] * (
+                                grid_world[next_i, next_j] + gamma * values[next_i, next_j]
+                            )
+                best_action = np.argmax(q_values)
+                policy[i, j] = best_action
+
+    return policy, values
+
+# Run policy iteration
+optimal_policy, optimal_values = policy_iteration(grid_world, transition_probs, initial_policy, num_actions)
+
+print("Optimal Policy:")
+print(optimal_policy)
+print("\nOptimal Values:")
+print(optimal_values)
